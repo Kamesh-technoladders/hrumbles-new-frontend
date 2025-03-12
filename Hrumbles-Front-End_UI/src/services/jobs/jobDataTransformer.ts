@@ -1,0 +1,52 @@
+
+import { JobData } from "@/lib/types";
+import { DbJob } from "./types";
+
+// Transform DB job record to application JobData model
+export const transformToJobData = (jobRecord: any): JobData => {
+  return {
+    id: jobRecord.id,
+    jobId: jobRecord.job_id,
+    title: jobRecord.title,
+    department: jobRecord.department || "Engineering",
+    location: jobRecord.location,
+    type: jobRecord.job_type,
+    status: jobRecord.status as "Active" | "Pending" | "Completed" | "OPEN" | "HOLD" | "CLOSE",
+    postedDate: jobRecord.posted_date,
+    applications: jobRecord.applications,
+    dueDate: jobRecord.due_date,
+    clientOwner: jobRecord.client_owner || "Internal HR",
+    hiringMode: jobRecord.hiring_mode || "Full Time",
+    submissionType: jobRecord.submission_type as "Internal" | "Client",
+    jobType: jobRecord.job_type_category || "Staffing",
+    experience: jobRecord.experience || undefined,
+    skills: jobRecord.skills || [],
+    description: jobRecord.description || undefined,
+    descriptionBullets: jobRecord.description_bullets || [],
+    clientDetails: jobRecord.client_details || undefined,
+  };
+};
+
+// Transform application JobData to DB job format
+export const transformToDbJob = (job: JobData): Record<string, any> => {
+  return {
+    job_id: job.jobId,
+    title: job.title,
+    department: job.department,
+    location: job.location,
+    job_type: job.type,
+    status: job.status,
+    posted_date: job.postedDate,
+    applications: job.applications,
+    due_date: job.dueDate,
+    client_owner: job.clientOwner,
+    hiring_mode: job.hiringMode,
+    submission_type: job.submissionType,
+    job_type_category: job.jobType as string,
+    skills: job.skills || [],
+    description: job.description || null,
+    experience: job.experience || null,
+    client_details: job.clientDetails || null,
+    description_bullets: job.descriptionBullets || []
+  };
+};
