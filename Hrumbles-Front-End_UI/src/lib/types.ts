@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 
 export interface JobData {
   id: string;  // Changed from number to string since we're using UUIDs
@@ -49,6 +50,11 @@ export interface JobData {
 }
 
 export interface Candidate {
+  resume: any;
+  hasValidatedResume: boolean;
+  currentStage: string;
+  profit: ReactNode;
+  appliedFrom: ReactNode;
   id: number;
   name: string;
   status: "Screening" | "Interviewing" | "Selected" | "Rejected";

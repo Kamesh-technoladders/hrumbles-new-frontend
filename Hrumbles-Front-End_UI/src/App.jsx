@@ -22,6 +22,9 @@ import GoalView from "./pages/goals/EmployeeView";
 import Jobs from "./pages/jobs/Jobs";
 import JobView from "./pages/jobs/JobView";
 import JobDescription from "./pages/jobs/JobDescription";
+import Career from "./pages/careerPage/Index";
+import CareerJobDetail from "./pages/careerPage/JobDetail";
+import CareerJobApplication from "./pages/careerPage/JobApplication";
 
 function App() {
   return (
@@ -31,6 +34,11 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
+
+        {/* career page */}
+        <Route path="/careers" element={<Career />} />
+          <Route path="/job/:jobId" element={<CareerJobDetail />} />
+          <Route path="/job/:jobId/apply" element={<CareerJobApplication />} />
 
         {/* Protected Routes */}
         <Route

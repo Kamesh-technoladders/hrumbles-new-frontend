@@ -1,12 +1,17 @@
 import type { Config } from "tailwindcss";
+import merge from "lodash.merge";
+import subProjectConfig from "./src/pages/careerPage/tailwind.config";
 
-export default {
+const mainConfig: Config = {
 	darkMode: ["class"],
 	content: [
 		"./pages/**/*.{ts,tsx}",
 		"./components/**/*.{ts,tsx}",
 		"./app/**/*.{ts,tsx}",
 		"./src/**/*.{ts,tsx}",
+		"./subproject/**/*.{ts,tsx}",
+		"!./pages/careerPage/**/*.{ts,tsx}", // Exclude subproject content
+		"!./components/careerPage/**/*.{ts,tsx}",
 	],
 	prefix: "",
 	theme: {
@@ -148,4 +153,6 @@ export default {
 		},
 	},
 	plugins: [require("tailwindcss-animate")],
-} satisfies Config;
+} 
+
+export default merge({}, mainConfig, subProjectConfig) satisfies Config;

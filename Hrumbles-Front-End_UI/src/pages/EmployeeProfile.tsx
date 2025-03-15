@@ -26,6 +26,8 @@ interface EmployeeDetail {
   aadhar_number?: string;
   aadhar_url?: string;
   pan_number?: string;
+  department_name?: string; 
+  designation_name?: string;
   pan_url?: string;
   esic_number?: string;
   esic_url?: string;
@@ -52,12 +54,19 @@ interface EmployeeDetail {
     start_date?: string;
     end_date?: string;
     employment_type?: string;
+    offerLetter?:string;
+    hikeLetter?:string;
+    seperationLetter?:string;
+    payslip1?:string;
+    payslip2?:string;
+    payslip3?:string;
   }>;
   education?: Array<{
     id: string;
     type: string;
     institute?: string;
     year_completed?: string;
+    document_url?:string;
   }>;
   bankDetails?: {
     account_holder_name: string;
@@ -66,6 +75,7 @@ interface EmployeeDetail {
     branch_name: string;
     ifsc_code: string;
     branch_address?: string;
+    city?:string;
   };
 }
 
@@ -75,6 +85,8 @@ const EmployeeProfile = () => {
   const [employee, setEmployee] = useState<EmployeeDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("personal");
+
+  console.log("employeeProfiledata", employee)
 
   useEffect(() => {
     if (id) {
@@ -89,7 +101,7 @@ const EmployeeProfile = () => {
       // Fetch employee basic details
       const { data: employeeData, error: employeeError } = await supabase
         .from('hr_employees')
-        .select('*')
+        .select('*, hr_departments(name), hr_designations(name)')
         .eq('id', employeeId)
         .single();
       
@@ -142,7 +154,14 @@ const EmployeeProfile = () => {
         location: exp.location,
         start_date: exp.start_date,
         end_date: exp.end_date,
-        employment_type: exp.employment_type
+        employment_type: exp.employment_type,
+        offerLetter: exp.offer_letter_url,
+        seperationLetter: exp.separation_letter_url,
+        hikeLetter: exp.hike_letter_url,
+        payslip1: exp.payslip_1_url,
+        payslip2: exp.payslip_2_url,
+        payslip3: exp.payslip_3_url,
+
       })) : [];
       
       // Map education data
@@ -150,17 +169,25 @@ const EmployeeProfile = () => {
         id: edu.id,
         type: edu.type,
         institute: edu.institute,
-        year_completed: edu.year_completed
+        year_completed: edu.year_completed,
+        document_url: edu.document_url
+
       })) : [];
+
+         // Extract department and designation names
+    const departmentName = employeeData?.hr_departments?.name || 'N/A';
+    const designationName = employeeData?.hr_designations?.name || 'N/A';
       
       // Combine all data
       const completeEmployeeData: EmployeeDetail = {
         ...employeeData,
+        department_name: departmentName,
+        designation_name: designationName,
         emergencyContacts: contactsData || [],
         address: addressData || {},
         experiences: mappedExperiences,
         education: mappedEducation,
-        bankDetails: bankData || undefined
+        bankDetails: bankData || undefined,
       };
       
       setEmployee(completeEmployeeData);
@@ -213,12 +240,7 @@ const EmployeeProfile = () => {
         <div className="md:col-span-1">
           <Card className="relative">
             <div className="h-36 w-full bg-gradient-to-r from-blue-100 to-blue-50"></div>
-            <Button 
-              onClick={() => navigate(`/employee/${id}`)}
-            >
-              Edit Profile
-            </Button>
-            
+          
             <div className="flex flex-col items-center -mt-16 px-6 pb-6">
               <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
                 {employee.profile_picture_url ? (
@@ -311,11 +333,16 @@ const EmployeeProfile = () => {
         {/* Right Column - Tabs & Content */}
         <div className="md:col-span-2">
           <Tabs defaultValue="personal" onValueChange={setActiveTab}>
-            <TabsList className="mb-6">
+            <TabsList className="mb-6 justify-between w-full">
+            <div className="flex space-x-2">
               <TabsTrigger value="personal" className="rounded-full">Personal Information</TabsTrigger>
-              <TabsTrigger value="job" className="rounded-full">Job Information</TabsTrigger>
+              <TabsTrigger value="job" className="rounded-full">Professional Information</TabsTrigger>
               <TabsTrigger value="salary" className="rounded-full">Salary Information</TabsTrigger>
               <TabsTrigger value="documents" className="rounded-full">Documents</TabsTrigger>
+              </div>
+    <div>
+      <Button onClick={() => navigate(`/employee/${id}`)}>Edit Profile</Button>
+    </div>
             </TabsList>
             
             <TabsContent value="personal" className="space-y-6">
@@ -355,8 +382,13 @@ const EmployeeProfile = () => {
                     </div>
                     
                     <div>
-                      <div className="text-sm text-gray-500">Technical Support</div>
-                      <div className="font-medium">{employee.position || "Not provided"}</div>
+                      <div className="text-sm text-gray-500">Department</div>
+                      <div className="font-medium">{employee.department_name || "Not provided"}</div>
+                    </div>
+
+                    <div>
+                      <div className="text-sm text-gray-500">Designation</div>
+                      <div className="font-medium">{employee.designation_name || "Not provided"}</div>
                     </div>
                     
                     <div>
@@ -371,7 +403,79 @@ const EmployeeProfile = () => {
                   </div>
                 </CardContent>
               </Card>
-              
+              {/* ID Proof */}
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-semibold mb-4">Identity Documents</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="border rounded-lg p-4">
+                      <div className="font-medium">Aadhar Card</div>
+                      <div className="text-sm text-gray-500 mt-1">
+                       Aadhar Number: {employee.aadhar_number || 'Not provided'}
+                      </div>
+                      {employee.aadhar_url ? (
+                        
+                        <div className="mt-2">
+                          <a 
+                            href={employee.aadhar_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-500 underline"
+                          >
+                            View Document
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="text-gray-500 italic mt-2">No document uploaded</div>
+                      )}
+                      
+                    </div>
+                    
+                    <div className="border rounded-lg p-4">
+                      <div className="font-medium">PAN Card</div>
+                      {employee.pan_url ? (
+                        <div className="mt-2">
+                          <a 
+                            href={employee.pan_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-500 underline"
+                          >
+                            View Document
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="text-gray-500 italic mt-2">No document uploaded</div>
+                      )}
+                      <div className="text-sm text-gray-500 mt-1">
+                        Number: {employee.pan_number || 'Not provided'}
+                      </div>
+                    </div>
+                    
+                    <div className="border rounded-lg p-4">
+                      <div className="font-medium">ESIC</div>
+                      {employee.esic_url ? (
+                        <div className="mt-2">
+                          <a 
+                            href={employee.esic_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-500 underline"
+                          >
+                            View Document
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="text-gray-500 italic mt-2">No document uploaded</div>
+                      )}
+                      <div className="text-sm text-gray-500 mt-1">
+                        Number: {employee.esic_number || 'Not provided'}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
               {/* Home Address */}
               <Card>
                 <CardContent className="pt-6">
@@ -415,18 +519,46 @@ const EmployeeProfile = () => {
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center">
                       <FileText className="h-5 w-5 text-blue-500 mr-2" />
-                      <h3 className="text-lg font-semibold">Tax Information</h3>
+                      <h3 className="text-lg font-semibold">Bank Information</h3>
                     </div>
                     {/* <Button variant="ghost" size="icon" className="rounded-full">
                       <Pencil className="h-4 w-4" />
                     </Button> */}
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-y-6">
-                    <div>
-                      <div className="text-sm text-gray-500">Tax Number</div>
-                      <div className="font-medium">{employee.pan_number || "Not provided"}</div>
+                  <div className="grid grid-cols-1 gap-y-6">
+                  {employee.bankDetails ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-sm text-gray-500">Account Holder</div>
+                        <div className="font-medium">{employee.bankDetails.account_holder_name}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-500">Bank Name</div>
+                        <div className="font-medium">{employee.bankDetails.bank_name}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-500">Account Number</div>
+                        <div className="font-medium">
+                          {employee.bankDetails.account_number.replace(/\d(?=\d{4})/g, "*")}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-500">IFSC Code</div>
+                        <div className="font-medium">{employee.bankDetails.ifsc_code}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-500">Branch</div>
+                        <div className="font-medium">{employee.bankDetails.branch_name}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-500">City</div>
+                        <div className="font-medium">{employee.bankDetails.city}</div>
+                      </div>
                     </div>
+                  ) : (
+                    <div className="text-gray-500 italic">No bank details available</div>
+                  )}
                   </div>
                 </CardContent>
               </Card>
@@ -438,23 +570,57 @@ const EmployeeProfile = () => {
                   <h3 className="text-lg font-semibold mb-4">Work Experience</h3>
                   
                   <div className="space-y-4">
-                    {employee.experiences && employee.experiences.length > 0 ? (
-                      employee.experiences.map((exp) => (
-                        <div key={exp.id} className="border rounded-lg p-4">
-                          <div className="font-semibold text-lg">{exp.position}</div>
-                          <div className="text-gray-700">{exp.company}</div>
-                          <div className="text-sm text-gray-500 mt-1">
-                            {exp.location ? `${exp.location} • ` : ''}{exp.employment_type || 'N/A'}
-                          </div>
-                          <div className="text-sm text-gray-500 mt-2">
-                            {formatDate(exp.start_date)} - {exp.end_date ? formatDate(exp.end_date) : 'Present'}
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-gray-500 italic">No work experience available</div>
-                    )}
-                  </div>
+  {employee.experiences && employee.experiences.length > 0 ? (
+    employee.experiences.map((exp) => (
+      <div key={exp.id} className="border rounded-lg p-4">
+        {/* Work Experience Details */}
+        <div className="mb-4">
+          <div className="font-semibold text-lg">{exp.position}</div>
+          <div className="text-gray-700">{exp.company}</div>
+          <div className="text-sm text-gray-500 mt-1">
+            {exp.location ? `${exp.location} • ` : ''}{exp.employment_type || 'N/A'}
+          </div>
+          <div className="text-sm text-gray-500 mt-2">
+            {formatDate(exp.start_date)} - {exp.end_date ? formatDate(exp.end_date) : 'Present'}
+          </div>
+        </div>
+
+        {/* Documents Section (Displayed Horizontally) */}
+        <div className="border-t pt-3 mt-3">
+          <div className="font-semibold text-sm mb-2">Documents</div>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <span>Offer Letter: {exp.offerLetter ? (
+              <a href={exp.offerLetter} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">View</a>
+            ) : 'N/A'}</span>
+
+            <span>Hike Letter: {exp.hikeLetter ? (
+              <a href={exp.hikeLetter} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">View</a>
+            ) : 'N/A'}</span>
+
+            <span>Payslip 1: {exp.payslip1 ? (
+              <a href={exp.payslip1} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">View</a>
+            ) : 'N/A'}</span>
+
+            <span>Payslip 2: {exp.payslip2 ? (
+              <a href={exp.payslip2} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">View</a>
+            ) : 'N/A'}</span>
+
+            <span>Payslip 3: {exp.payslip3 ? (
+              <a href={exp.payslip3} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">View</a>
+            ) : 'N/A'}</span>
+
+            <span>Separation Letter: {exp.seperationLetter ? (
+              <a href={exp.seperationLetter} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">View</a>
+            ) : 'N/A'}</span>
+          </div>
+        </div>
+      </div>
+    ))
+  ) : (
+    <div className="text-gray-500 italic">No work experience available</div>
+  )}
+</div>
+
                 </CardContent>
               </Card>
               
@@ -462,7 +628,7 @@ const EmployeeProfile = () => {
                 <CardContent className="pt-6">
                   <h3 className="text-lg font-semibold mb-4">Education</h3>
                   
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {employee.education && employee.education.length > 0 ? (
                       employee.education.map((edu) => (
                         <div key={edu.id} className="border rounded-lg p-4">
@@ -473,6 +639,9 @@ const EmployeeProfile = () => {
                               new Date(edu.year_completed).getFullYear()
                             ) : 'N/A'}
                           </div>
+                          <span>Certificate: {edu.document_url ? (
+              <a href={edu.document_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">View</a>
+            ) : 'N/A'}</span>
                         </div>
                       ))
                     ) : (

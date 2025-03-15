@@ -106,3 +106,15 @@ export const deleteJobRecord = async (id: string) => {
 
   return { error };
 };
+
+export const shareJob = async (jobId) => {
+  const { data, error } = await supabase
+    .from("shared_jobs")
+    .insert([{ job_id: jobId }]);
+
+  if (error) {
+    console.error("Error sharing job:", error);
+    return { success: false, error };
+  }
+  return { success: true, data };
+};

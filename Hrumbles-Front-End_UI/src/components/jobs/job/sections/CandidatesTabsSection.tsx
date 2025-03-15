@@ -17,6 +17,7 @@ const CandidatesTabsSection = ({
 }: CandidatesTabsSectionProps) => {
   const [activeTab, setActiveTab] = useState("all");
 
+
   // Calculate counts for each status category
   const newCount = candidates.filter(c => c.status === "New").length;
   const inReviewCount = candidates.filter(c => c.status === "InReview").length;

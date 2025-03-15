@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CandidateStatus } from "@/lib/types";
 
 export interface HrJobCandidate {
+  location: any;
   id: string;
   job_id: string;
   name: string;
@@ -19,9 +20,16 @@ export interface HrJobCandidate {
   // Additional fields
   metadata: Record<string, any> | null;
   skill_ratings: Array<{name: string, rating: number}> | null;
+  applied_from?: string;
+  expected_salary: any;
+  current_salary: any;
 }
 
 export interface CandidateData {
+  location: any;
+  expectedSalary: any; // ✅ Fix field name
+  currentSalary: any; // ✅ Fix field name
+  appliedFrom?: string; // ✅ Fix field name
   id: string;
   name: string;
   status: CandidateStatus;
@@ -32,13 +40,16 @@ export interface CandidateData {
   email?: string;
   phone?: string;
   resumeUrl?: string;
-  // Additional fields
   metadata?: Record<string, any>;
-  skillRatings?: Array<{name: string, rating: number}>;
+  skillRatings?: Array<{ name: string; rating: number }>;
 }
 
+
 // Map database candidate to application candidate model
+// ✅ FIX: Include missing fields
 export const mapDbCandidateToData = (candidate: HrJobCandidate): CandidateData => {
+  console.log("Candidate from DB:", candidate); // ✅ Debugging log
+  
   return {
     id: candidate.id,
     name: candidate.name,
@@ -51,11 +62,15 @@ export const mapDbCandidateToData = (candidate: HrJobCandidate): CandidateData =
     phone: candidate.phone || undefined,
     resumeUrl: candidate.resume_url || undefined,
     metadata: candidate.metadata || undefined,
-    skillRatings: candidate.skill_ratings || undefined
+    skillRatings: candidate.skill_ratings || undefined,
+    appliedFrom: candidate.applied_from ?? undefined, // ✅ Ensure mapping
+    currentSalary: candidate.current_salary ?? undefined, // ✅ Ensure mapping
+    expectedSalary: candidate.expected_salary ?? undefined, // ✅ Ensure mapping
+    location: candidate.location ?? undefined, // ✅ Ensure mapping
   };
 };
 
-// Map application candidate model to database candidate
+
 export const mapCandidateToDbData = (candidate: CandidateData): Partial<HrJobCandidate> => {
   return {
     name: candidate.name,
@@ -68,9 +83,13 @@ export const mapCandidateToDbData = (candidate: CandidateData): Partial<HrJobCan
     phone: candidate.phone || null,
     resume_url: candidate.resumeUrl || null,
     metadata: candidate.metadata || null,
-    skill_ratings: candidate.skillRatings || null
+    skill_ratings: candidate.skillRatings || null,
+    applied_from: candidate.appliedFrom || null, // ✅ Fix
+    current_salary: candidate.currentSalary || null, // ✅ Fix
+    expected_salary: candidate.expectedSalary || null, // ✅ Fix
   };
 };
+
 
 // Get all candidates for a job
 export const getCandidatesByJobId = async (jobId: string): Promise<CandidateData[]> => {
@@ -78,7 +97,11 @@ export const getCandidatesByJobId = async (jobId: string): Promise<CandidateData
     // Using raw SQL query since the table isn't in the TypeScript types yet
     const { data, error } = await supabase
       .from('hr_job_candidates')
-      .select('*')
+      .select(`
+        id, job_id, name, status, experience, match_score, applied_date, 
+        skills, email, phone, resume_url, metadata, skill_ratings, 
+        applied_from, current_salary, expected_salary, location
+      `)
       .eq('job_id', jobId)
       .order('created_at', { ascending: false });
 

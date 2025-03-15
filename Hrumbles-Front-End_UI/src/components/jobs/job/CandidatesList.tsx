@@ -50,17 +50,21 @@ const CandidatesList = ({ jobId, statusFilter, onAddCandidate }: CandidatesListP
     const currentStage = statusValue === "Rejected" ? "Rejected" : recruitmentStages[stageIndex >= 0 ? stageIndex : 0];
     
     return {
-      id: parseInt(candidate.id) || 0,
+      id: candidate.id,
       name: candidate.name,
       status: statusValue,
       experience: candidate.experience,
       matchScore: candidate.matchScore,
       appliedDate: candidate.appliedDate,
       skills: candidate.skills || [],
-      // Add mock data for the new UI fields
-      owner: "John Doe",
-      profit: "$2,500",
+      email: candidate.email,   // ✅ New Field
+    phone: candidate.phone,   // ✅ New Field
+    currentSalary: candidate.currentSalary, // ✅ New Field
+    expectedSalary: candidate.expectedSalary, // ✅ New Field
+    appliedFrom: candidate.appliedFrom, // ✅ Already used
+    location: candidate.location, // ✅ New Field
       currentStage,
+      resume: candidate.resumeUrl,
       completedStages: recruitmentStages.slice(0, stageIndex),
       hasValidatedResume: Math.random() > 0.5
     };
@@ -70,6 +74,8 @@ const CandidatesList = ({ jobId, statusFilter, onAddCandidate }: CandidatesListP
   const filteredCandidates = statusFilter 
     ? candidates.filter(c => c.status === statusFilter)
     : candidates;
+
+    console.log("filteredCandidates", filteredCandidates)
 
   const handleStatusChange = async (candidateId: number, newStatus: CandidateStatus) => {
     try {
@@ -81,16 +87,34 @@ const CandidatesList = ({ jobId, statusFilter, onAddCandidate }: CandidatesListP
       console.error("Error updating status:", error);
     }
   };
+  console.log("CandidatesList", candidates)
 
-  const handleValidateResume = (candidateId: number) => {
-    toast.success("Resume validated successfully");
-    // In real implementation, this would update the candidate in the database
+
+  const handleValidateResume = async (candidateId: number) => {
+    try {
+      // Simulating a backend update (replace this with an actual API call)
+      const candidateIndex = filteredCandidates.findIndex(c => c.id === candidateId);
+      if (candidateIndex !== -1) {
+        filteredCandidates[candidateIndex].hasValidatedResume = true;
+        toast.success("Resume validated successfully!");
+        refetch(); // ✅ Refresh data from API after validation
+      }
+    } catch (error) {
+      toast.error("Failed to validate resume");
+      console.error("Validation error:", error);
+    }
   };
+  
 
   const handleViewResume = (candidateId: number) => {
-    toast.info("Viewing resume");
-    // In real implementation, this would open the resume in a new tab or modal
+    const candidate = filteredCandidates.find(c => c.id === candidateId);
+    if (candidate?.resume) {
+      window.open(candidate.resume, "_blank"); // ✅ Opens resume in new tab
+    } else {
+      toast.error("Resume not available");
+    }
   };
+  
 
   const handleScheduleInterview = (candidateId: number) => {
     toast.info("Schedule interview clicked");
@@ -144,7 +168,7 @@ const CandidatesList = ({ jobId, statusFilter, onAddCandidate }: CandidatesListP
                   </span>
                 </div>
               </TableCell>
-              <TableCell>{candidate.owner}</TableCell>
+              <TableCell>{candidate.appliedFrom}</TableCell>
               <TableCell>{candidate.profit}</TableCell>
               <TableCell>
                 <div className="w-28">

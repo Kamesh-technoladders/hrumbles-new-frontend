@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { JobData } from "@/lib/types";
 import { useState } from "react";
 import ViewJDModal from "@/components/jobs/job/ViewJDModal";
+import {shareJob} from '@/services/jobs/supabaseQueries'
+import { useToast } from '@/hooks/use-toast';
 
 interface JobHeaderSectionProps {
   job: JobData;
@@ -14,6 +16,16 @@ interface JobHeaderSectionProps {
 
 const JobHeaderSection = ({ job, onEditJob }: JobHeaderSectionProps) => {
   const [isJDModalOpen, setIsJDModalOpen] = useState(false);
+    const { toast } = useToast();
+
+    const handleShare = async (jobId) => {
+      const response = await shareJob(jobId);
+      if (response.success) {
+        toast({ title: "Job shared successfully!", variant: "default" });
+      } else {
+        toast({ title: "Failed to share job", description: response.error.message, variant: "destructive" });
+      }
+    };
 
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -53,7 +65,7 @@ const JobHeaderSection = ({ job, onEditJob }: JobHeaderSectionProps) => {
           <span className="hidden sm:inline">View JD</span>
         </Button>
         
-        <Button 
+        <Button  onClick={() => handleShare(job.id)}
           variant="outline" 
           className="flex items-center gap-2 flex-1 sm:flex-initial"
         >

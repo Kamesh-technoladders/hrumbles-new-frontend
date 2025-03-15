@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       host: "::",
-      port: 8081,
+      port: 8080,
       strictPort: true,
       hmr: {
         protocol: "ws",
