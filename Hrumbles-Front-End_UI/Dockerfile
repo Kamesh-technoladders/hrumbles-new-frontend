@@ -1,27 +1,35 @@
+# ---- Step 1: Build Stage ----
+FROM node:18.17.0 AS build
 
-# Use Node.js base image
-FROM node:18.17.0
+# Set working directory inside the container
+WORKDIR /app
 
-# Set working directory
-WORKDIR /usr/src/app
-
-# Copy package files
+# Copy only package.json and package-lock.json to install dependencies first (Docker caching)
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --force --quiet
+RUN npm ci --quiet
 
-# Copy the rest of the application code
+# Copy the entire project to the container
 COPY . .
 
 # Build the application
 RUN npm run build
 
-# Install serve to run the application
+# ---- Step 2: Production Stage ----
+FROM node:18.17.0 AS production
+
+# Install serve to serve the built files
 RUN npm install -g serve
 
-# Expose port 80
+# Set working directory
+WORKDIR /app
+
+# Copy built files from the build stage
+COPY --from=build /app/dist dist
+
+# Expose port 80 for the app
 EXPOSE 80
 
-# Start the application
+# Serve the application
 CMD ["serve", "-s", "dist", "-l", "80"]
