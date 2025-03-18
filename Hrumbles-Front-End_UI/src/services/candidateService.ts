@@ -188,6 +188,33 @@ export const updateCandidateStatus = async (id: string, status: CandidateStatus)
   }
 };
 
+// Update Skill Ratings alone Tab
+// Update only the skill_ratings field for a candidate
+export const updateCandidateSkillRatings = async (
+  id: string,
+  skillRatings: Array<{ name: string; rating: number }>
+): Promise<CandidateData> => {
+  try {
+    // Using raw SQL query since the table isn't in the TypeScript types yet
+    const { data, error } = await supabase
+      .from('hr_job_candidates')
+      .update({ skill_ratings: skillRatings }) // Update only skill_ratings
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error("Error updating candidate skill ratings:", error);
+      throw error;
+    }
+
+    return mapDbCandidateToData(data as HrJobCandidate);
+  } catch (error) {
+    console.error(`Failed to update skill ratings for candidate with ID ${id}:`, error);
+    throw error;
+  }
+};
+
 // Delete a candidate
 export const deleteCandidate = async (id: string): Promise<void> => {
   try {

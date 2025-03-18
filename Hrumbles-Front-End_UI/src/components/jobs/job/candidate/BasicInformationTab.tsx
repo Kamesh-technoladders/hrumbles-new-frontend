@@ -1,4 +1,3 @@
-
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -21,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import MultiLocationSelector from "./MultiLocationSelector";
 import { CandidateFormData } from "./AddCandidateDrawer";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BasicInformationTabProps {
   form: UseFormReturn<CandidateFormData>;
@@ -48,10 +48,7 @@ const basicInfoSchema = z.object({
   relevantExperience: z.coerce.number().min(0, "Relevant experience cannot be negative"),
   currentSalary: z.coerce.number().min(0, "Current salary cannot be negative"),
   expectedSalary: z.coerce.number().min(0, "Expected salary cannot be negative"),
-  resume: z.any().refine(file => {
-    if (!file) return false;
-    return true;
-  }, "Resume is required"),
+  resume: z.string().url("Resume URL is required"),
   skills: z.array(z.object({
     name: z.string(),
     rating: z.number()
@@ -59,9 +56,35 @@ const basicInfoSchema = z.object({
 });
 
 const BasicInformationTab = ({ form, onSaveAndNext, onCancel }: BasicInformationTabProps) => {
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    form.setValue("resume", file);
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+  
+    if (!file) return;
+    
+    const filePath = `resumes/${Date.now()}_${file.name}`;
+  
+    // Upload the file to Supabase storage
+    const { data, error } = await supabase.storage
+      .from("candidate_resumes")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+  
+    if (error) {
+      console.error("Upload Error:", error.message);
+      return;
+    }
+  
+    // Get the public URL
+    const { data: { publicUrl } } = supabase.storage
+    .from("candidate_resumes")
+    .getPublicUrl(filePath);
+
+  // Store the resume URL in the form instead of the file object
+  if (publicUrl) {
+    form.setValue("resume", publicUrl); // Ensure this line is executed
+  }
   };
   
   return (
@@ -249,7 +272,7 @@ const BasicInformationTab = ({ form, onSaveAndNext, onCancel }: BasicInformation
         <FormField
           control={form.control}
           name="resume"
-          render={({ field: { value, ...fieldProps } }) => (
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Resume <span className="text-red-500">*</span></FormLabel>
               <FormControl>
@@ -257,9 +280,11 @@ const BasicInformationTab = ({ form, onSaveAndNext, onCancel }: BasicInformation
                   type="file" 
                   accept=".pdf,.doc,.docx" 
                   onChange={handleFileChange}
-                  {...fieldProps}
                 />
               </FormControl>
+              {field.value && (
+                <p className="text-sm text-green-600">Uploaded: {field.value}</p>
+              )}
               <FormMessage />
             </FormItem>
           )}
